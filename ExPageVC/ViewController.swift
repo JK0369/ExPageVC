@@ -16,6 +16,12 @@ class ViewController: UIViewController {
     
     private var items = (0...2).map(String.init)
     fileprivate var contentViewControllers = [UIViewController]()
+    var currentPageIndex: Int {
+        contentViewControllers
+            .enumerated()
+            .first(where: { _, vc in vc == pageVC.viewControllers?.first })
+            .map(\.0) ?? 0
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,6 +47,11 @@ class ViewController: UIViewController {
         addChild(pageVC)
         pageVC.didMove(toParent: self)
         pageVC.setViewControllers([contentViewControllers[0]], direction: .forward, animated: false)
+        
+        // 1.
+        pageVC.view.subviews
+            .compactMap { $0 as? UIScrollView }
+            .forEach { $0.delegate = self }
     }
     
     private func setUpLayout() {
@@ -76,5 +87,14 @@ extension ViewController: UIPageViewControllerDataSource {
         let nextIndex = index + 1
         guard nextIndex < contentViewControllers.count else { return nil }
         return contentViewControllers[nextIndex]
+    }
+}
+
+extension ViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let isFirsable = currentPageIndex == 0
+        let isLastable = currentPageIndex == contentViewControllers.count - 1
+        let shouldDisableBounces = isFirsable || isLastable
+        scrollView.bounces = !shouldDisableBounces
     }
 }
